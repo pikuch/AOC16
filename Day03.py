@@ -2,8 +2,8 @@
 
 # figure out if the list of 3 numbers can represent a triangle
 def can_be_triangle(t):
-    t.sort()
-    return t[0] + t[1] > t[2]
+    ts = sorted(t)
+    return ts[0] + ts[1] > ts[2]
 
 
 # count cases which can be triangles
@@ -29,3 +29,13 @@ for line in data:
     tris.append(tri)
 
 print(f"The number of possible triangles is {count_possible_triangles(tris)}")
+
+# part 2
+
+trisV = []
+
+for i in range(len(tris)//3):
+    for j in range(3):
+        trisV.append([tris[i*3][j], tris[i*3+1][j], tris[i*3+2][j]])
+
+print(f"The number of vertical triangles is {count_possible_triangles(trisV)}")
