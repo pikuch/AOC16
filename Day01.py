@@ -1,11 +1,3 @@
-# load the data
-with open("Day01input.txt") as f:
-    data = f.read()
-
-# data cleanup
-data = data.replace(' ', '')
-data = data.split(',')
-
 
 # position tracker
 class Tracker:
@@ -58,6 +50,14 @@ class Tracker:
         else:
             pass  # shouldn't happen, we stay where we are
 
+
+# load the data
+with open("Day01input.txt") as f:
+    data = f.read()
+
+# data cleanup
+data = data.replace(' ', '')
+data = data.split(',')
 
 # decode the path
 tracker = Tracker(0, 0, 0)
