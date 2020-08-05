@@ -50,6 +50,23 @@ class Trans:
 
         return abba_in_regular and not abba_in_hypernet
 
+    def get_ABAs(self, where):
+        abas = []
+        for s in where:
+            for i in range(max(len(s) - 2, 0)):
+                if s[i] == s[i + 2] and s[i] != s[i + 1]:
+                    abas.append(s[i:i+2])
+        return abas
+
+    def supports_SSL(self):
+        h_pairs = self.get_ABAs(self.hypernet)
+        r_pairs = self.get_ABAs(self.regular)
+        for h in h_pairs:
+            for r in r_pairs:
+                if h == r[::-1]:
+                    return True
+        return False
+
 
 # load the data
 with open("Day07input.txt") as f:
@@ -60,10 +77,14 @@ msgs = []
 for d in data:
     msgs.append(Trans(d))
 
-support_count = 0
+support_TLS_count = 0
+support_SSL_count = 0
 
 for m in msgs:
     if m.supports_TLS():
-        support_count += 1
+        support_TLS_count += 1
+    if m.supports_SSL():
+        support_SSL_count += 1
 
-print(f"Number of IPs supporting TLS = {support_count}")
+print(f"Number of IPs supporting TLS = {support_TLS_count}")
+print(f"Number of IPs supporting SSL = {support_SSL_count}")
