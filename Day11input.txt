@@ -1,0 +1,3 @@
+pol G, thu G, thu M, pro G, rut G, rut M, cob G, cob M
+pol M, pro M
+
