@@ -69,3 +69,13 @@ for n in nodes:
     if 17 in n.values and 61 in n.values:
         print(str(n))
 
+values = []
+for n in nodes:
+    if n.type == "bot":
+        if n.connections[0][0] == "output" and int(n.connections[0][1]) < 3:
+            values.append(min(n.values))
+        if n.connections[1][0] == "output" and int(n.connections[1][1]) < 3:
+            values.append(max(n.values))
+
+print(f"outputs 0-2: {values}")
+print(f"the answer: {values[0]*values[1]*values[2]}")
