@@ -1,5 +1,3 @@
-import numpy as np
-from itertools import permutations
 
 # load the data
 with open("Day11input.txt") as f:
@@ -24,107 +22,88 @@ for floor in floors:
             elements.append(el[0])
 
 
-def can_move_with(el0, ty0, el1, ty1):
-    if ty0 == ty1:
-        return True
-    else:
-        if el0 == el1:
+def encode_string(floor_list):
+    encoded = "1"  # elevator position
+    for fl in floor_list:
+        encoded += "."
+        if not len(fl):
+            continue
+        for el in fl:
+            if el[1] == "G":
+                encoded += chr(ord("A") + elements.index(el[0]))
+            else:
+                encoded += chr(ord("a") + elements.index(el[0]))
+    return encoded
+
+
+def is_solution(state):
+    items = state.split(".")
+    if items[0] == "4":
+        if items[1] == items[2] == items[3] == "":
             return True
     return False
 
 
-def can_move(s, lvl, el, ty):
-    if ty == 0:  # a new generator
-        for check in range(len(elements)):
-            if check != el:
-                if s[lvl][check][1] and not s[lvl][check][0]:
-                    return False
-    else:  # a new microchip
-        if not s[lvl][el][0]:
-            for check in range(len(elements)):
-                if s[lvl][check][0]:
-                    return False
-    return True
+def try_move(state):
+    items = state.split(".")
+    lvl = int(items[0])
+    if lvl > 1:  # can move down
+        # try moving one item
+        for i in range(len(items[lvl])):
+            items[lvl - 1] += items[lvl][i]
+            items[lvl] = items[lvl][:i] + items[lvl][i+1:]
+            items[0] = str(lvl - 1)
+            yield ".".join(items)
+        # try moving two items
+        for i in range(len(items[lvl])):
+            for j in range(i+1, len(items[lvl])):
+                # TODO: check if can move items together
+                items[lvl - 1] += items[lvl][i] + items[lvl][j]
+                items[lvl] = items[lvl][:i] + items[lvl][i + 1:j] + items[lvl][j + 1:]
+                items[0] = str(lvl - 1)
+                yield ".".join(items)
+
+    if lvl < 4:  # can move up
+        # try moving one item
+        for i in range(len(items[lvl])):
+            items[lvl + 1] += items[lvl][i]
+            items[lvl] = items[lvl][:i] + items[lvl][i+1:]
+            items[0] = str(lvl + 1)
+            yield ".".join(items)
+        # try moving two items
+        for i in range(len(items[lvl])):
+            for j in range(i+1, len(items[lvl])):
+                # TODO: check if can move items together
+                items[lvl + 1] += items[lvl][i] + items[lvl][j]
+                items[lvl] = items[lvl][:i] + items[lvl][i + 1:j] + items[lvl][j + 1:]
+                items[0] = str(lvl + 1)
+                yield ".".join(items)
 
 
-def something_broke(s, lvl):
-    for el in range(len(elements)):
-        if s[lvl][el][1] and not s[lvl][el][0]:
-            for check in range(len(elements)):
-                if s[lvl][check][0]:
-                    return True
+# system state as a string
+state = encode_string(floors)
 
-
-def not_seen(ns, lvl, seen):
-    for i in range(len(seen)):
-        if np.array_equiv(ns, seen[i][0]) and lvl == seen[i][1]:
-            return False
-    return True
-
-
-# system state as an array
-state = np.zeros((4, len(elements), 2), dtype=np.uint8)
-
-for floor_number, floor in enumerate(floors):
-    if not len(floor):
-        continue
-    for el in floor:
-        state[floor_number][elements.index(el[0])][0 if el[1] == "G" else 1] = 1
-
-to_try = [(state, 0, 0)]
-seen = [(state, 0)]
+seen_states = []
+to_check = [(state, 0)]
 last_moves = -1
 
-while len(to_try):
-    state, elevator, moves = to_try.pop(0)
-    if moves != last_moves:
-        print(f"Moves: {moves}, to check: {len(to_try)}")
-    last_moves = moves
-    if something_broke(state, elevator):  # we got into an illegal state
+while len(to_check):
+    # get a new state
+    state, moves = to_check.pop(0)
+    # check if already visited
+    if state in seen_states:
         continue
-    if elevator == 3:
-        if state[3].sum() == 2 * len(elements):
-            print(f"Everything is on the 4th floor in {moves} moves")
-            break
-    # try moving single items
-    for item_type in range(2):
-        for element in range(len(elements)):
-            if state[elevator][element][item_type]:
-                if elevator - 1 >= 0 and can_move(state, elevator, element, item_type):
-                    ns = np.copy(state)
-                    ns[elevator][element][item_type] = 0
-                    ns[elevator - 1][element][item_type] = 1
-                    if not_seen(ns, elevator, seen):
-                        seen.append((ns, elevator))
-                        to_try.append((ns, elevator - 1, moves + 1))
-                if elevator + 1 < 4 and can_move(state, elevator, element, item_type):
-                    ns = np.copy(state)
-                    ns[elevator][element][item_type] = 0
-                    ns[elevator + 1][element][item_type] = 1
-                    if not_seen(ns, elevator, seen):
-                        seen.append((ns, elevator))
-                        to_try.append((ns, elevator + 1, moves + 1))
-    # try moving pairs of items
-    for item_types in permutations(range(2), 2):
-        for elements in permutations(range(len(elements)), 2):
-            if state[elevator][elements[0]][item_types[0]] and state[elevator][elements[1]][item_types[1]]:
-                if can_move_with(elements[0], item_types[0], elements[1], item_types[1]):
-                    if elevator - 1 >= 0:
-                        ns = np.copy(state)
-                        ns[elevator][elements[0]][item_types[0]] = 0
-                        ns[elevator - 1][elements[0]][item_types[0]] = 1
-                        ns[elevator][elements[1]][item_types[1]] = 0
-                        ns[elevator - 1][elements[1]][item_types[1]] = 1
-                        if not_seen(ns, elevator, seen):
-                            seen.append((ns, elevator))
-                            to_try.append((ns, elevator - 1, moves + 1))
-                    if elevator + 1 < 4:
-                        ns = np.copy(state)
-                        ns[elevator][elements[0]][item_types[0]] = 0
-                        ns[elevator + 1][elements[0]][item_types[0]] = 1
-                        ns[elevator][elements[1]][item_types[1]] = 0
-                        ns[elevator + 1][elements[1]][item_types[1]] = 1
-                        if not_seen(ns, elevator, seen):
-                            seen.append((ns, elevator))
-                            to_try.append((ns, elevator + 1, moves + 1))
-
+    else:
+        seen_states.append(state)
+    # show the progress
+    if moves != last_moves:
+        print(f"Checking move {moves}, {len(to_check)} paths to check, seen {len(seen_states)} different states")
+        last_moves = moves
+    # check if it's the solution
+    if is_solution(state):
+        print(f"Found the solution ({state}) in {moves} moves!")
+        break
+    # try moving stuff
+    for new_state in try_move(state):
+        print(new_state)
+    break
