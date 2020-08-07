@@ -24,6 +24,12 @@ for floor in floors:
             elements.append(el[0])
 
 
+def encode_array(floors):
+    s = np.zeros((4, len(elements), 2), dtype=np.uint8)
+    # TODO: encode to array
+
+
+
 def can_move_with(el0, ty0, el1, ty1):
     if ty0 == ty1:
         return True
