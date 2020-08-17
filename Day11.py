@@ -26,8 +26,79 @@ for floor in floors:
 
 def encode_array(floors):
     s = np.zeros((4, len(elements), 2), dtype=np.uint8)
-    # TODO: encode to array
+    for floor_number, floor in enumerate(floors):
+        if len(floor):
+            for el in floor:
+                if el[1] == "G":
+                    s[floor_number][elements.index(el[0])][0] = 1
+                else:
+                    s[floor_number][elements.index(el[0])][1] = 1
 
+    return s
+
+
+def is_solution(state):
+    return state[3].sum() == len(elements) * 2
+
+
+def good_state(state):
+    for floor in range(4):
+        if sum(state[floor])[0] and sum(state[floor])[1]:  # there are generators and microchips
+            if np.any(np.diff(state[floor]) == 1):  # unprotected microchip
+                return False
+    return True
+
+
+def possible_moves(state, lvl):
+    move_list = []
+    if lvl > 0:  # we can go down
+        for el in range(len(elements)):
+            for kind in range(2):
+                if state[lvl][el][kind]:
+                    new_state = state.copy()
+                    new_state[lvl][el][kind] = 0
+                    new_state[lvl-1][el][kind] = 1
+                    if good_state(new_state):
+                        move_list.append((new_state, lvl-1))
+        for el0 in range(len(elements)):
+            for el1 in range(len(elements)):
+                for kind0 in range(2):
+                    for kind1 in range(2):
+                        if el0 == el1 and kind0 == kind1:
+                            continue
+                        if state[lvl][el0][kind0] and state[lvl][el1][kind1]:
+                            new_state = state.copy()
+                            new_state[lvl][el0][kind0] = 0
+                            new_state[lvl-1][el0][kind0] = 1
+                            new_state[lvl][el1][kind1] = 0
+                            new_state[lvl-1][el1][kind1] = 1
+                            if good_state(new_state):
+                                move_list.append((new_state, lvl-1))
+
+    if lvl < 3:  # we can go up
+        for el in range(len(elements)):
+            for kind in range(2):
+                if state[lvl][el][kind]:
+                    new_state = state.copy()
+                    new_state[lvl][el][kind] = 0
+                    new_state[lvl+1][el][kind] = 1
+                    if good_state(new_state):
+                        move_list.append((new_state, lvl+1))
+        for el0 in range(len(elements)):
+            for el1 in range(len(elements)):
+                for kind0 in range(2):
+                    for kind1 in range(2):
+                        if el0 == el1 and kind0 == kind1:
+                            continue
+                        if state[lvl][el0][kind0] and state[lvl][el1][kind1]:
+                            new_state = state.copy()
+                            new_state[lvl][el0][kind0] = 0
+                            new_state[lvl+1][el0][kind0] = 1
+                            new_state[lvl][el1][kind1] = 0
+                            new_state[lvl+1][el1][kind1] = 1
+                            if good_state(new_state):
+                                move_list.append((new_state, lvl+1))
+    return move_list
 
 
 def can_move_with(el0, ty0, el1, ty1):
@@ -80,6 +151,7 @@ for floor_number, floor in enumerate(floors):
 to_try = [(state, 0, 0)]
 seen = [(state, 0)]
 last_moves = -1
+seen_count = 0
 
 while len(to_try):
     state, elevator, moves = to_try.pop(0)
