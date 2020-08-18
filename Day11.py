@@ -5,6 +5,9 @@ from itertools import permutations
 with open("Day11input.txt") as f:
     data = f.read().split("\n")
 
+# testing data
+# data = ["hyd M, lit M", "hyd G", "lit G", ""]
+
 floors = []
 for line in data:
     objects = line.split(",")
@@ -38,7 +41,7 @@ def encode_array(floors):
 
 
 def is_solution(state):
-    return state[3].sum() == len(elements) * 2
+    return state[3].all()
 
 
 def good_state(state):
@@ -49,9 +52,33 @@ def good_state(state):
     return True
 
 
+def remove_equivalent():
+    rem_indexes = []
+    for i in range(len(to_check)):
+        if i not in rem_indexes:
+            for perm in permutations(range(len(elements))):
+                idx = np.array(perm)
+                perm_state = to_check[i][0][:][:, idx]
+                for j in range(i+1, len(to_check)):
+                    if j not in rem_indexes:
+                        if to_check[i][1] == to_check[j][1] and to_check[i][2] <= to_check[j][2] and (perm_state == to_check[j][0]).all():
+                            rem_indexes.append(j)
+
+    for i in sorted(rem_indexes, reverse=True):
+        del to_check[i]
+
+    return len(rem_indexes)
+
+
 def possible_moves(state, lvl):
     move_list = []
-    if lvl > 0:  # we can go down
+    lowest_nonempty_floor = 0
+    if not state[0].any():
+        lowest_nonempty_floor = 1
+        if not state[1].any():
+            lowest_nonempty_floor = 2
+
+    if lvl > lowest_nonempty_floor:  # we can go down
         for el in range(len(elements)):
             for kind in range(2):
                 if state[lvl][el][kind]:
@@ -61,7 +88,7 @@ def possible_moves(state, lvl):
                     if good_state(new_state):
                         move_list.append((new_state, lvl-1))
         for el0 in range(len(elements)):
-            for el1 in range(len(elements)):
+            for el1 in range(el0, len(elements)):
                 for kind0 in range(2):
                     for kind1 in range(2):
                         if el0 == el1 and kind0 == kind1:
@@ -85,7 +112,7 @@ def possible_moves(state, lvl):
                     if good_state(new_state):
                         move_list.append((new_state, lvl+1))
         for el0 in range(len(elements)):
-            for el1 in range(len(elements)):
+            for el1 in range(el0, len(elements)):
                 for kind0 in range(2):
                     for kind1 in range(2):
                         if el0 == el1 and kind0 == kind1:
