@@ -1,4 +1,3 @@
-import numpy as np
 from itertools import permutations
 
 # load the data
@@ -28,16 +27,19 @@ for floor in floors:
 
 
 def encode_array(floors):
-    s = np.zeros((4, len(elements), 2), dtype=np.uint8)
+    s = []
+    for i in range(len(elements)):
+        s.append([0, 0])
+
     for floor_number, floor in enumerate(floors):
         if len(floor):
             for el in floor:
                 if el[1] == "G":
-                    s[floor_number][elements.index(el[0])][0] = 1
+                    s[elements.index(el[0])][0] = floor_number
                 else:
-                    s[floor_number][elements.index(el[0])][1] = 1
+                    s[elements.index(el[0])][1] = floor_number
 
-    return s
+    return [0, s]
 
 
 def is_solution(state):
@@ -178,7 +180,6 @@ for floor_number, floor in enumerate(floors):
 to_try = [(state, 0, 0)]
 seen = [(state, 0)]
 last_moves = -1
-seen_count = 0
 
 while len(to_try):
     state, elevator, moves = to_try.pop(0)
