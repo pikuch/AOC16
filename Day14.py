@@ -6,7 +6,7 @@ with open("Day14input.txt") as f:
     data = f.read()
 
 # test
-data = "abc"
+# data = "abc"
 
 candidates = []
 confirmed = []
@@ -42,6 +42,9 @@ while True:
         break
 
 confirmed = sorted(confirmed, key=lambda x: x[2])
+
+for i in range(60, len(confirmed)):
+    print(confirmed[i])
 
 print(f"\nThe last hash found at index {confirmed[63][2]}")
 
@@ -56,6 +59,9 @@ while True:
     hash_in = data + str(index)
     hash_out = hexlify(md5(bytes(hash_in, "ascii")).digest())
     s = str(hash_out, "utf-8")
+    for i in range(2016):
+        hash_out = hexlify(md5(bytes(s, "ascii")).digest())
+        s = str(hash_out, "utf-8")
 
     if index % 1000 == 0:
         print(f"\rindex: {index:7d}, candidates: {len(candidates):5d}, found hashes: {len(confirmed):3d}", end="")
@@ -82,7 +88,7 @@ while True:
 
 confirmed = sorted(confirmed, key=lambda x: x[2])
 
-for i, conf in enumerate(confirmed):
-    print(f"{i}: {conf}")
+for i in range(60, len(confirmed)):
+    print(confirmed[i])
 
 print(f"\nThe last hash found at index {confirmed[63][2]}")
