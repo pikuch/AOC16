@@ -1,4 +1,4 @@
-import numpy as np
+from copy import deepcopy
 from itertools import permutations
 
 # load the data
@@ -28,103 +28,106 @@ for floor in floors:
 
 
 def encode_array(floors):
-    s = np.zeros((4, len(elements), 2), dtype=np.uint8)
+    s = []
+    for i in range(len(elements)):
+        s.append([0, 0])
+
     for floor_number, floor in enumerate(floors):
         if len(floor):
             for el in floor:
                 if el[1] == "G":
-                    s[floor_number][elements.index(el[0])][0] = 1
+                    s[elements.index(el[0])][0] = floor_number
                 else:
-                    s[floor_number][elements.index(el[0])][1] = 1
+                    s[elements.index(el[0])][1] = floor_number
 
-    return s
+    return [0, s]
 
 
 def is_solution(state):
-    return state[3].all()
-
-
-def good_state(state):
-    for floor in range(4):
-        if sum(state[floor])[0] and sum(state[floor])[1]:  # there are generators and microchips
-            if np.any(np.diff(state[floor]) == 1):  # unprotected microchip
-                return False
+    for pair in state[1]:
+        if pair[0] != 3 or pair[1] != 3:
+            return False
     return True
 
 
-def remove_equivalent():
-    rem_indexes = []
-    for i in range(len(to_check)):
-        if i not in rem_indexes:
-            for perm in permutations(range(len(elements))):
-                idx = np.array(perm)
-                perm_state = to_check[i][0][:][:, idx]
-                for j in range(i+1, len(to_check)):
-                    if j not in rem_indexes:
-                        if to_check[i][1] == to_check[j][1] and to_check[i][2] <= to_check[j][2] and (perm_state == to_check[j][0]).all():
-                            rem_indexes.append(j)
-
-    for i in sorted(rem_indexes, reverse=True):
-        del to_check[i]
-
-    return len(rem_indexes)
+def get_hash(state):
+    s = str(state[0])
+    for pair in state[1]:
+        s += str(pair[0]) + str(pair[1])
+    return s
 
 
-def possible_moves(state, lvl):
+def get_new_hashes(state):
+    hashes = set()
+    for perm in permutations(state[1]):
+        hashes.add(get_hash([state[0], perm]))
+    return hashes
+
+
+def good_state(state):
+    global seen_states
+    # find radiation zones
+    radiation = [0] * 4
+    for pair in state[1]:
+        radiation[pair[0]] = 1
+    # find unprotected chips
+    for pair in state[1]:
+        if radiation[pair[1]] and pair[0] != pair[1]:
+            return False
+    # check if the state (or its equivalent) has already been visited
+    if get_hash(state) in seen_states:
+        return False
+    # add new states to seen states
+    seen_states |= get_new_hashes(state)
+    return True
+
+
+def possible_moves(state):
     move_list = []
-    lowest_nonempty_floor = 0
-    if not state[0].any():
-        lowest_nonempty_floor = 1
-        if not state[1].any():
-            lowest_nonempty_floor = 2
 
-    if lvl > lowest_nonempty_floor:  # we can go down
-        for el in range(len(elements)):
-            for kind in range(2):
-                if state[lvl][el][kind]:
-                    new_state = state.copy()
-                    new_state[lvl][el][kind] = 0
-                    new_state[lvl-1][el][kind] = 1
-                    if good_state(new_state):
-                        move_list.append((new_state, lvl-1))
-        for el0 in range(len(elements)):
-            for el1 in range(el0, len(elements)):
-                for kind0 in range(2):
-                    for kind1 in range(2):
-                        if el0 == el1 and kind0 == kind1:
-                            continue
-                        if state[lvl][el0][kind0] and state[lvl][el1][kind1]:
-                            new_state = state.copy()
-                            new_state[lvl][el0][kind0] = 0
-                            new_state[lvl-1][el0][kind0] = 1
-                            new_state[lvl][el1][kind1] = 0
-                            new_state[lvl-1][el1][kind1] = 1
-                            if good_state(new_state):
-                                move_list.append((new_state, lvl-1))
+    lowest_nonempty_floor = 3
+    for pair in state[1]:
+        if pair[0] < lowest_nonempty_floor:
+            lowest_nonempty_floor = pair[0]
+        if pair[1] < lowest_nonempty_floor:
+            lowest_nonempty_floor = pair[1]
 
-    if lvl < 3:  # we can go up
-        for el in range(len(elements)):
-            for kind in range(2):
-                if state[lvl][el][kind]:
-                    new_state = state.copy()
-                    new_state[lvl][el][kind] = 0
-                    new_state[lvl+1][el][kind] = 1
-                    if good_state(new_state):
-                        move_list.append((new_state, lvl+1))
-        for el0 in range(len(elements)):
-            for el1 in range(el0, len(elements)):
-                for kind0 in range(2):
-                    for kind1 in range(2):
-                        if el0 == el1 and kind0 == kind1:
-                            continue
-                        if state[lvl][el0][kind0] and state[lvl][el1][kind1]:
-                            new_state = state.copy()
-                            new_state[lvl][el0][kind0] = 0
-                            new_state[lvl+1][el0][kind0] = 1
-                            new_state[lvl][el1][kind1] = 0
-                            new_state[lvl+1][el1][kind1] = 1
+    if state[0] < 3:  # we can go up
+        # try moving two elements up
+        for pair1 in range(len(state[1])):
+            for pair2 in range(pair1, len(state[1])):
+                for i1 in range(2):
+                    for i2 in range(2):
+                        if state[1][pair1][i1] == state[0] and state[1][pair2][i2] == state[0]:
+                            if pair1 == pair2 and i1 == i2:
+                                continue
+                            new_state = deepcopy(state)
+                            new_state[0] += 1
+                            new_state[1][pair1][i1] += 1
+                            new_state[1][pair2][i2] += 1
                             if good_state(new_state):
-                                move_list.append((new_state, lvl+1))
+                                move_list.append(new_state)
+
+        # try moving one element up
+        for pair in range(len(state[1])):
+            for i in range(2):
+                if state[1][pair][i] == state[0]:
+                    new_state = deepcopy(state)
+                    new_state[0] += 1
+                    new_state[1][pair][i] += 1
+                    if good_state(new_state):
+                        move_list.append(new_state)
+
+    if state[0] > lowest_nonempty_floor:  # we can go down
+        # try moving one element down
+        for pair in range(len(state[1])):
+            for i in range(2):
+                if state[1][pair][i] == state[0]:
+                    new_state = deepcopy(state)
+                    new_state[0] -= 1
+                    new_state[1][pair][i] -= 1
+                    if good_state(new_state):
+                        move_list.append(new_state)
     return move_list
 
 
@@ -178,7 +181,6 @@ for floor_number, floor in enumerate(floors):
 to_try = [(state, 0, 0)]
 seen = [(state, 0)]
 last_moves = -1
-seen_count = 0
 
 while len(to_try):
     state, elevator, moves = to_try.pop(0)
@@ -233,3 +235,30 @@ while len(to_try):
                             seen.append((ns, elevator))
                             to_try.append((ns, elevator + 1, moves + 1))
 
+
+########################################################################
+# part 2
+# takes a few minutes, but it works
+
+# system state as an array
+state = encode_array(floors)
+state[1].extend([[0, 0], [0, 0]])
+
+seen_states = {get_hash(state)}
+to_check = [(state, 0)]
+last_moves = -1
+
+while len(to_check):
+    # get a new state
+    state, moves = to_check.pop(0)
+    # show the progress
+    if moves != last_moves:
+        print(f"\rChecking move {moves:2d}, {len(to_check):6d} paths to check, {len(seen_states):6d} states seen", end="")
+        last_moves = moves
+    # check if it's the solution
+    if is_solution(state):
+        print(f"\nFound the solution to part 2 in {moves} moves!")
+        break
+    # try moving stuff
+    for new_state in possible_moves(state):
+        to_check.append((new_state, moves + 1))
