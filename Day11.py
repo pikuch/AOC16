@@ -235,3 +235,30 @@ while len(to_try):
                             seen.append((ns, elevator))
                             to_try.append((ns, elevator + 1, moves + 1))
 
+
+########################################################################
+# part 2
+# takes a few minutes, but it works
+
+# system state as an array
+state = encode_array(floors)
+state[1].extend([[0, 0], [0, 0]])
+
+seen_states = {get_hash(state)}
+to_check = [(state, 0)]
+last_moves = -1
+
+while len(to_check):
+    # get a new state
+    state, moves = to_check.pop(0)
+    # show the progress
+    if moves != last_moves:
+        print(f"\rChecking move {moves:2d}, {len(to_check):6d} paths to check, {len(seen_states):6d} states seen", end="")
+        last_moves = moves
+    # check if it's the solution
+    if is_solution(state):
+        print(f"\nFound the solution to part 2 in {moves} moves!")
+        break
+    # try moving stuff
+    for new_state in possible_moves(state):
+        to_check.append((new_state, moves + 1))
