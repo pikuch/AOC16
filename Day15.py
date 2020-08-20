@@ -33,10 +33,11 @@ time = 0
 while not aligned(time):
     time += 1
 
-print(f"\rAlignment time: {time}")
+print(f"Alignment time: {time}")
 
+discs.append([11, (len(discs) + 1) % 11])
 time = 0
 while not aligned(time):
     time += 1
 
-print(f"\rAlignment time: {time}")
+print(f"Alignment time with a bonus disc: {time}")
