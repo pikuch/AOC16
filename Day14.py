@@ -1,5 +1,4 @@
 from hashlib import md5
-from binascii import hexlify
 
 # load the data
 with open("Day14input.txt") as f:
@@ -8,87 +7,47 @@ with open("Day14input.txt") as f:
 # test
 # data = "abc"
 
-candidates = []
-confirmed = []
-index = 0
-last_index = None
 
-while True:
-    hash_in = data + str(index)
-    hash_out = hexlify(md5(bytes(hash_in, "ascii")).digest())
-    s = str(hash_out, "utf-8")
+def run_search(stretch):
+    candidates = []
+    confirmed = []
+    index = 0
+    last_index = 10**10
 
-    if index % 1000 == 0:
-        print(f"\rindex: {index:7d}, candidates: {len(candidates):5d}, found hashes: {len(confirmed):3d}", end="")
+    while index < last_index:
 
-    for cand in candidates:
-        if cand[2] + 1000 < index:
-            candidates.remove(cand)
+        s_in = data + str(index)
+        s = md5(s_in.encode()).hexdigest()
+        if stretch:
+            for i in range(2016):
+                s = md5(s.encode()).hexdigest()
 
-    for h, char, i in candidates:
-        if s.find(char * 5) > -1:
-            confirmed.append((h, char, i))
-            if len(confirmed) == 64:
-                if last_index is None:
-                    last_index = index + 1000
+        if index % 100 == 0:
+            print(f"\rindex: {index:7d}, candidates: {len(candidates):5d}, found hashes: {len(confirmed):3d}", end="")
 
-    for i in range(len(s)-2):
-        if s[i] == s[i+1] == s[i+2]:
-            candidates.append((s, s[i], index))
-            break
+        for cand in candidates:
+            if not cand[3]:
+                if cand[2] + 1000 < index:
+                    cand[3] = 1000
+                    continue
+                if s.find(cand[1] * 5) > -1:
+                    confirmed.append(cand)
+                    cand[3] = 1
+                    if len(confirmed) == 64:
+                        if last_index == 10**10:
+                            last_index = index + 1000
 
-    index += 1
-    if index == last_index:
-        break
+        for i in range(len(s)-2):
+            if s[i] == s[i+1] == s[i+2]:
+                candidates.append([s, s[i], index, 0])
+                break
 
-confirmed = sorted(confirmed, key=lambda x: x[2])
+        index += 1
 
-for i in range(60, len(confirmed)):
-    print(confirmed[i])
+    confirmed = sorted(confirmed, key=lambda x: x[2])
 
-print(f"\nThe last hash found at index {confirmed[63][2]}")
+    return confirmed[63][2]
 
-# part 2
 
-candidates = []
-confirmed = []
-index = 0
-last_index = None
-
-while True:
-    hash_in = data + str(index)
-    hash_out = hexlify(md5(bytes(hash_in, "ascii")).digest())
-    s = str(hash_out, "utf-8")
-    for i in range(2016):
-        hash_out = hexlify(md5(bytes(s, "ascii")).digest())
-        s = str(hash_out, "utf-8")
-
-    if index % 1000 == 0:
-        print(f"\rindex: {index:7d}, candidates: {len(candidates):5d}, found hashes: {len(confirmed):3d}", end="")
-
-    for cand in candidates:
-        if cand[2] + 1000 < index:
-            candidates.remove(cand)
-
-    for h, char, i in candidates:
-        if s.find(char * 5) > -1:
-            confirmed.append((h, char, i))
-            if len(confirmed) == 64:
-                if last_index is None:
-                    last_index = index + 1000
-
-    for i in range(len(s)-2):
-        if s[i] == s[i+1] == s[i+2]:
-            candidates.append((s, s[i], index))
-            break
-
-    index += 1
-    if index == last_index:
-        break
-
-confirmed = sorted(confirmed, key=lambda x: x[2])
-
-for i in range(60, len(confirmed)):
-    print(confirmed[i])
-
-print(f"\nThe last hash found at index {confirmed[63][2]}")
+print(f"\nThe 64th hash found at index {run_search(stretch=False)}")
+print(f"\nThe 64th stretched hash found at index {run_search(stretch=True)}")
