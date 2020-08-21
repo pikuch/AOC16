@@ -12,33 +12,31 @@ def bordersafe_rule(s, i):
         return calculate_rule(s[i-1:i+2])
 
 
-def generate_row(tiles):
-    new_row = ""
-    for i in range(len(tiles[-1])):
-        new_row += bordersafe_rule(tiles[-1], i)
-    tiles.append(new_row)
-
-
 def count_safe(tiles):
-    safe = 0
-    for row in tiles:
-        safe += row.count(".")
-    return safe
+    return tiles.count(".")
+
+
+def generate_and_count(tiles, rows):
+    empties = count_safe(tiles)
+    for row in range(rows-1):
+        if row % 10000 == 0:
+            print(f"\rCalculating row {row} / {rows}", end="")
+        new_row = ""
+        for i in range(len(tiles)):
+            new_row += bordersafe_rule(tiles, i)
+        tiles = new_row
+        empties += count_safe(tiles)
+    return empties
 
 
 # load the data
 with open("Day18input.txt") as f:
-    data = f.read()
+    tiles = f.read()
 
-tiles = [data]
 traps = ["^^.", ".^^", "^..", "..^"]
 
-while len(tiles) < 40:
-    generate_row(tiles)
+empties = generate_and_count(tiles, 40)
+print(f"\nThere are {empties} safe tiles in 40 rows")
 
-print(f"There are {count_safe(tiles)} safe tiles in {len(tiles)} rows")
-
-while len(tiles) < 400000:
-    generate_row(tiles)
-
-print(f"There are {count_safe(tiles)} safe tiles in {len(tiles)} rows")
+empties = generate_and_count(tiles, 400000)
+print(f"\nThere are {empties} safe tiles in 400000 rows")
