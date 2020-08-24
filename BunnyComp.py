@@ -3,12 +3,15 @@ class BunnyComp:
         self.reg = [0] * 4
         self.program = []
         self.pc = 0
+        self.output = []
+        self.output_length = 20
         self.ops = {
             "cpy": self.cpy,
             "inc": self.inc,
             "dec": self.dec,
             "jnz": self.jnz,
-            "tgl": self.tgl
+            "tgl": self.tgl,
+            "out": self.out
         }
 
     #####################################################
@@ -53,6 +56,10 @@ class BunnyComp:
             exit(1)
         self.pc += 1
 
+    def out(self, args):
+        self.output.append(self.reg[args[0]])
+        self.pc += 1
+
     #####################################################
 
     def get_reg(self, name):
@@ -77,6 +84,9 @@ class BunnyComp:
 
     def run(self):
         while True:
+            if len(self.output) > self.output_length:
+                return self.output
+
             try:
                 inst = self.program[self.pc]
             except IndexError:
