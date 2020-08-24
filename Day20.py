@@ -1,3 +1,5 @@
+from functools import reduce
+
 
 def cutout(what, wlist):
     low, high = map(int, what.split("-"))
@@ -31,4 +33,6 @@ whitelist = [[0, 2**32-1]]
 for d in data:
     whitelist = cutout(d, whitelist)
 
-print(sorted(whitelist, key=lambda x: x[0]))
+print(f"The lowest not blocked IP is {sorted(whitelist, key=lambda x: x[0])[0][0]}")
+
+print(f"The number of allowed IPs is {reduce(lambda x, y: x + y[1] - y[0] + 1, whitelist, 0)}")
