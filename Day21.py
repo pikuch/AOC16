@@ -1,3 +1,5 @@
+from itertools import permutations
+
 
 class Scrambler:
     def __init__(self, s):
@@ -92,3 +94,14 @@ password = Scrambler(word)
 password.scramble(data)
 
 print(f"The scrambled password is {password.get()}")
+
+perm_count = len(list(permutations("abcdefgh")))
+
+for i, candidate in enumerate(permutations("abcdefgh")):
+    password = Scrambler("".join(candidate))
+    password.scramble(data)
+    if i % 100 == 0:
+        print(f"\rchecking permutation {i}/{perm_count}", end="")
+    if password.get() == "fbgdceah":
+        print(f"\nFound it: {''.join(candidate)}")
+        break
